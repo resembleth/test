@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<title>创造力生态图谱实验室</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f0f3f5;
+margin:0;
+padding:40px;
+text-align:center;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:40px;
+border-radius:14px;
+box-shadow:0 15px 40px rgba(0,0,0,0.1);
+}
+
+h1{
+margin-bottom:10px;
+}
+
+.question{
+text-align:left;
+margin:22px 0;
+}
+
+.scale{
+display:flex;
+justify-content:space-between;
+margin-top:6px;
+}
+
+button{
+margin-top:30px;
+padding:14px 24px;
+font-size:16px;
+background:#2e7d32;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+#map{
+margin-top:40px;
+height:260px;
+border-radius:12px;
+position:relative;
+overflow:hidden;
+background:#e6ecef;
+}
+
+canvas{
+margin-top:40px;
+}
+
+.result{
+margin-top:30px;
+font-size:18px;
+line-height:1.6;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container" id="app">
+
+<h1>创造力生态图谱</h1>
+
+<p>回答问题，生成你的创造生态。</p>
+
+<div id="questions"></div>
+
+<button onclick="calculate()">生成创造图谱</button>
+
+<canvas id="radarChart"></canvas>
+
+<div id="map"></div>
+
+<div id="result" class="result"></div>
+
+<button onclick="download()">保存结果图片</button>
+
+</div>
+
+<script>
+
+const questions=[
+
+"我经常注意到别人忽略的细节",
+"光线或材质变化会吸引我",
+"观察环境会激发创意",
+"我喜欢记录生活细节",
+"进入空间会观察结构",
+"细节是创作来源",
+
+"我喜欢连接不同领域",
+"不相关事物会形成联系",
+"跨学科内容激发灵感",
+"喜欢组合不同媒介",
+"创意来自元素重组",
+"从多个角度理解问题",
+
+"我经常产生新想法",
+"尝试未知方法让我兴奋",
+"喜欢实验新方式",
+"打破规则产生创造",
+"行动会产生灵感",
+"愿意尝试未成熟想法",
+
+"我会思考创作结构",
+"喜欢建立框架",
+"会整理想法",
+"结构让作品清晰",
+"考虑部分关系",
+"喜欢秩序设计"
+
+]
+
+const container=document.getElementById("questions")
+
+questions.forEach((q,i)=>{
+
+let div=document.createElement("div")
+div.className="question"
+
+let html=`<p>${i+1}. ${q}</p><div class="scale">`
+
+for(let s=1;s<=5;s++){
+
+html+=`
+<label>
+<input type="radio" name="q${i}" value="${s}">
+${s}
+</label>
+`
+
+}
+
+html+="</div>"
+
+div.innerHTML=html
+
+container.appendChild(div)
+
+})
+
+function calculate(){
+
+let scores=[0,0,0,0]
+
+for(let i=0;i<24;i++){
+
+let radios=document.getElementsByName("q"+i)
+
+for(let r of radios){
+
+if(r.checked){
+
+let group=Math.floor(i/6)
+scores[group]+=parseInt(r.value)
+
+}
+
+}
+
+}
+
+let avg=scores.map(s=>s/6)
+
+drawChart(avg)
+drawMap(avg)
+showResult(avg)
+
+}
+
+function drawChart(data){
+
+new Chart(document.getElementById("radarChart"),{
+
+type:"radar",
+
+data:{
+labels:["森林","河流","火山","山脉"],
+datasets:[{
+label:"创造力结构",
+data:data
+}]
+},
+
+options:{
+scales:{r:{min:1,max:5}}
+}
+
+})
+
+}
+
+function drawMap(avg){
+
+let map=document.getElementById("map")
+
+let forest=avg[0]
+let river=avg[1]
+let volcano=avg[2]
+let mountain=avg[3]
+
+let html=""
+
+if(forest>3)
+html+=`<div style="position:absolute;bottom:0;width:100%;height:80px;background:#2e7d32"></div>`
+
+if(river>3)
+html+=`<div style="position:absolute;width:100%;height:8px;background:#2196f3;top:120px"></div>`
+
+if(volcano>3)
+html+=`<div style="position:absolute;bottom:80px;left:50%;width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:60px solid #e53935"></div>`
+
+if(mountain>3)
+html+=`<div style="position:absolute;bottom:0;left:20%;width:0;height:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:100px solid #757575"></div>`
+
+map.innerHTML=html
+
+}
+
+function showResult(avg){
+
+let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a])
+
+let first=index[0]
+let second=index[1]
+
+const types={
+
+"0-1":["感知诗人","观察与连接让你的创造像森林中的河流"],
+"1-2":["概念炼金术士","思想在不同领域之间发生化学反应"],
+"2-3":["世界建造者","你能构建完整系统与结构"],
+"0-2":["实验探索者","观察与行动不断生成新创意"],
+"1-3":["结构策展人","你擅长整合思想并构建秩序"],
+"0-3":["秩序观察者","你在观察世界中建立结构"],
+"2-1":["行动思想家","实践不断生成新的概念"],
+"3-2":["系统创造者","结构与生成形成强大创造力"]
+
+}
+
+let key=`${first}-${second}`
+
+let type=types[key] || ["复合创造者","你的创造结构呈现均衡状态"]
+
+document.getElementById("result").innerHTML=
+
+"<h2>"+type[0]+"</h2><p>"+type[1]+"</p>"
+
+}
+
+function download(){
+
+html2canvas(document.getElementById("app")).then(canvas=>{
+
+let link=document.createElement("a")
+link.download="creativity-ecology.png"
+link.href=canvas.toDataURL()
+link.click()
+
+})
+
+}
+
+</script>
+
+</body>
+</html>
