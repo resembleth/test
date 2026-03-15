@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>视觉增强版创造力生态图谱</title>
+<title>艺术创造力生态图谱</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
@@ -120,8 +120,8 @@ margin-top:12px;
     font-weight: normal;
 }
 
-/* 选中的选项样式 */
-.scale input[type="radio"]:checked + label {
+/* 选中的选项样式 - 深绿色背景，白色文字，字体加粗 */
+.selected-option {
     background: #2e7d32 !important;
     color: white !important;
     font-weight: bold !important;
@@ -129,15 +129,6 @@ margin-top:12px;
     box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
 }
 
-/* 在选中项上添加勾选标记 */
-.scale input[type="radio"]:checked + label::after {
-    content: '✓';
-    position: absolute;
-    top: 2px;
-    right: 5px;
-    font-size: 12px;
-    color: white;
-}
 
 button{
 margin-top:30px;
@@ -291,8 +282,8 @@ border: 1px solid #dee2e6;
 
 <body>
 <div class="container" id="app">
-<h1>视觉增强版创造力生态图谱</h1>
-<p class="description">回答问题，生成你的创造生态</p>
+<h1>艺术创造力生态图谱</h1>
+<p class="description">回答问题，生成你的创造力生态</p>
 
 <div class="legend">
     <div class="legend-item">
@@ -396,8 +387,8 @@ questions.forEach((q,i)=>{
     
     for(let s=1;s<=5;s++){
         html+=`
-        <label for="q${i}_${s}">
-            <input type="radio" id="q${i}_${s}" name="q${i}" value="${s}" onchange="updateQuestionStatus(${i})">
+        <label for="q${i}_${s}" id="label_q${i}_${s}" class="option-label">
+            <input type="radio" id="q${i}_${s}" name="q${i}" value="${s}">
             ${s}
         </label>
         `
@@ -408,90 +399,94 @@ questions.forEach((q,i)=>{
     container.appendChild(div)
 })
 
-// 跟踪每个问题是否已回答
-const answeredQuestions = Array(questions.length).fill(false)
-
-function updateQuestionStatus(questionIndex) {
-    // 检查该问题是否被选中
-    const radios = document.getElementsByName(`q${questionIndex}`)
-    for (let r of radios) {
-        if (r.checked) {
-            answeredQuestions[questionIndex] = true
-            break
-        }
-    }
-}
+// 为每个选项添加点击事件监听器
+document.querySelectorAll('.option-label').forEach(label => {
+    label.addEventListener('click', function() {
+        // 先移除所有同类选项的选中样式
+        const questionName = this.querySelector('input[type="radio"]').name;
+        const allOptions = document.querySelectorAll(`label[for^="${questionName}_"]`);
+        allOptions.forEach(option => {
+            option.classList.remove('selected-option');
+        });
+        
+        // 为当前点击的选项添加选中样式
+        this.classList.add('selected-option');
+        
+        // 同步更新对应的radio按钮状态
+        this.querySelector('input[type="radio"]').checked = true;
+    });
+});
 
 function validateAndCalculate() {
     // 检查所有问题是否都已回答
-    const unAnswered = []
+    const unAnswered = [];
     for (let i = 0; i < questions.length; i++) {
-        const radios = document.getElementsByName(`q${i}`)
-        let hasChecked = false
+        const radios = document.getElementsByName(`q${i}`);
+        let hasChecked = false;
         for (let r of radios) {
             if (r.checked) {
-                hasChecked = true
-                break
+                hasChecked = true;
+                break;
             }
         }
         if (!hasChecked) {
-            unAnswered.push(i + 1)
+            unAnswered.push(i + 1);
         }
     }
     
-    const messageElement = document.getElementById('validationMessage')
+    const messageElement = document.getElementById('validationMessage');
     
     if (unAnswered.length > 0) {
-        messageElement.textContent = `请完成以下问题：${unAnswered.join(', ')}`
-        messageElement.className = 'validation-message error'
-        messageElement.style.display = 'block'
+        messageElement.textContent = `请完成以下问题：${unAnswered.join(', ')}`;
+        messageElement.className = 'validation-message error';
+        messageElement.style.display = 'block';
         
         // 高亮未回答的问题
         unAnswered.forEach(index => {
-            const questionDiv = document.querySelector(`.question:nth-child(${index})`)
-            questionDiv.style.backgroundColor = '#f8d7da'
-            questionDiv.style.borderColor = '#c62828'
-        })
+            const questionDiv = document.querySelector(`.question:nth-child(${index})`);
+            questionDiv.style.backgroundColor = '#f8d7da';
+            questionDiv.style.borderColor = '#c62828';
+        });
         
-        return false
+        return false;
     } else {
-        messageElement.textContent = '所有问题已完成，正在生成图谱...'
-        messageElement.className = 'validation-message success'
-        messageElement.style.display = 'block'
+        messageElement.textContent = '所有问题已完成，正在生成图谱...';
+        messageElement.className = 'validation-message success';
+        messageElement.style.display = 'block';
         
         setTimeout(() => {
-            calculate()
-            messageElement.style.display = 'none'
-        }, 1000)
+            calculate();
+            messageElement.style.display = 'none';
+        }, 1000);
         
-        return true
+        return true;
     }
 }
 
 function calculate(){
-    let scores=[0,0,0,0]
-    let validResponses = 0
+    let scores=[0,0,0,0];
+    let validResponses = 0;
     
     for(let i=0;i<24;i++){
-        let radios=document.getElementsByName("q"+i)
+        let radios=document.getElementsByName("q"+i);
         
         for(let r of radios){
             if(r.checked){
-                let group=Math.floor(i/6)
-                scores[group]+=parseInt(r.value)
-                validResponses++
-                break // 确保每个问题只计算一次
+                let group=Math.floor(i/6);
+                scores[group]+=parseInt(r.value);
+                validResponses++;
+                break; // 确保每个问题只计算一次
             }
         }
     }
     
     // 检查是否所有问题都有答案
     if(validResponses !== 24) {
-        console.error("计分异常：并非所有问题都有答案")
-        return
+        console.error("计分异常：并非所有问题都有答案");
+        return;
     }
     
-    let avg=scores.map(s=>s/6)
+    let avg=scores.map(s=>s/6);
     
     // 更新分数显示并高亮活跃维度
     const scoreElements = [
@@ -499,33 +494,33 @@ function calculate(){
         document.getElementById("river-score"),
         document.getElementById("volcano-score"),
         document.getElementById("mountain-score")
-    ]
+    ];
     
     const cardElements = [
         document.getElementById("forest-card"),
         document.getElementById("river-card"),
         document.getElementById("volcano-card"),
         document.getElementById("mountain-card")
-    ]
+    ];
     
     // 移除所有激活状态
-    cardElements.forEach(card => card.classList.remove('active'))
+    cardElements.forEach(card => card.classList.remove('active'));
     
     // 更新分数并高亮最高分维度
     scoreElements.forEach((el, idx) => {
-        el.textContent = avg[idx].toFixed(2)
-    })
+        el.textContent = avg[idx].toFixed(2);
+    });
     
     // 找出最高分维度并高亮
-    const maxScore = Math.max(...avg)
-    const maxIndex = avg.indexOf(maxScore)
+    const maxScore = Math.max(...avg);
+    const maxIndex = avg.indexOf(maxScore);
     if(maxIndex !== -1) {
-        cardElements[maxIndex].classList.add('active')
+        cardElements[maxIndex].classList.add('active');
     }
     
-    drawChart(avg)
-    drawMap(avg)
-    showResult(avg)
+    drawChart(avg);
+    drawMap(avg);
+    showResult(avg);
 }
 
 function drawChart(data){
@@ -602,173 +597,173 @@ function drawChart(data){
                 }
             }
         }
-    })
+    });
 }
 
 function drawMap(avg){
-    let map=document.getElementById("map")
-    map.innerHTML = ""
+    let map=document.getElementById("map");
+    map.innerHTML = "";
     
     // 创建一个渐变背景
-    const gradient = document.createElement('div')
-    gradient.style.position = 'absolute'
-    gradient.style.top = '0'
-    gradient.style.left = '0'
-    gradient.style.width = '100%'
-    gradient.style.height = '100%'
-    gradient.style.background = 'radial-gradient(circle at center, rgba(230, 236, 239, 0.8), rgba(220, 225, 229, 1))'
-    gradient.style.zIndex = '0'
-    map.appendChild(gradient)
+    const gradient = document.createElement('div');
+    gradient.style.position = 'absolute';
+    gradient.style.top = '0';
+    gradient.style.left = '0';
+    gradient.style.width = '100%';
+    gradient.style.height = '100%';
+    gradient.style.background = 'radial-gradient(circle at center, rgba(230, 236, 239, 0.8), rgba(220, 225, 229, 1))';
+    gradient.style.zIndex = '0';
+    map.appendChild(gradient);
     
     // 根据分数绘制生态系统元素
-    const forestScore = avg[0]
-    const riverScore = avg[1]
-    const volcanoScore = avg[2]
-    const mountainScore = avg[3]
+    const forestScore = avg[0];
+    const riverScore = avg[1];
+    const volcanoScore = avg[2];
+    const mountainScore = avg[3];
     
     // 森林 - 左侧绿色区域
     if(forestScore > 1.5) {
-        const forestHeight = Math.min(100, (forestScore - 1.5) * 25)
-        const forestWidth = 150 + (forestScore * 10)
-        const forestOpacity = Math.min(1, forestScore / 5)
+        const forestHeight = Math.min(100, (forestScore - 1.5) * 25);
+        const forestWidth = 230 + (forestScore * 10);
+        const forestOpacity = Math.min(1, forestScore / 5);
         
-        const forest = document.createElement('div')
-        forest.style.position = 'absolute'
-        forest.style.bottom = '0'
-        forest.style.left = '10%'
-        forest.style.width = `${forestWidth}px`
-        forest.style.height = `${forestHeight}px`
-        forest.style.background = `linear-gradient(to top, rgba(46, 125, 50, ${forestOpacity}), rgba(38, 83, 42, ${forestOpacity}))`
-        forest.style.borderRadius = '10px 10px 0 0'
-        forest.style.opacity = forestOpacity
-        forest.style.zIndex = '1'
-        forest.title = `森林: ${forestScore.toFixed(2)}`
-        map.appendChild(forest)
+        const forest = document.createElement('div');
+        forest.style.position = 'absolute';
+        forest.style.bottom = '0';
+        forest.style.left = '10%';
+        forest.style.width = `${forestWidth}px`;
+        forest.style.height = `${forestHeight}px`;
+        forest.style.background = `linear-gradient(to top, rgba(46, 125, 50, ${forestOpacity}), rgba(38, 83, 42, ${forestOpacity}))`;
+        forest.style.borderRadius = '10px 10px 0 0';
+        forest.style.opacity = forestOpacity;
+        forest.style.zIndex = '1';
+        forest.title = `森林: ${forestScore.toFixed(2)}`;
+        map.appendChild(forest);
         
         // 添加树木装饰
         for(let i = 0; i < Math.floor(forestScore * 2); i++) {
-            const tree = document.createElement('div')
-            tree.style.position = 'absolute'
-            tree.style.bottom = `${forestHeight}px`
-            tree.style.left = `${15 + Math.random() * 30}%`
-            tree.style.width = '4px'
-            tree.style.height = `${Math.random() * 30 + 20}px`
-            tree.style.backgroundColor = '#2e7d32'
-            tree.style.borderRadius = '2px'
-            tree.style.zIndex = '2'
-            map.appendChild(tree)
+            const tree = document.createElement('div');
+            tree.style.position = 'absolute';
+            tree.style.bottom = `${forestHeight}px`;
+            tree.style.left = `${15 + Math.random() * 30}%`;
+            tree.style.width = '4px';
+            tree.style.height = `${Math.random() * 30 + 20}px`;
+            tree.style.backgroundColor = '#2e7d32';
+            tree.style.borderRadius = '2px';
+            tree.style.zIndex = '2';
+            map.appendChild(tree);
             
-            const leaves = document.createElement('div')
-            leaves.style.position = 'absolute'
-            leaves.style.bottom = `${forestHeight + Math.random() * 10 + 20}px`
-            leaves.style.left = `${15 + Math.random() * 30 - 2}%`
-            leaves.style.width = '20px'
-            leaves.style.height = '20px'
-            leaves.style.backgroundColor = '#4caf50'
-            leaves.style.borderRadius = '50%'
-            leaves.style.zIndex = '2'
-            map.appendChild(leaves)
+            const leaves = document.createElement('div');
+            leaves.style.position = 'absolute';
+            leaves.style.bottom = `${forestHeight + Math.random() * 10 + 20}px`;
+            leaves.style.left = `${15 + Math.random() * 30 - 2}%`;
+            leaves.style.width = '20px';
+            leaves.style.height = '20px';
+            leaves.style.backgroundColor = '#4caf50';
+            leaves.style.borderRadius = '50%';
+            leaves.style.zIndex = '2';
+            map.appendChild(leaves);
         }
     }
     
     // 河流 - 中央蓝色线条
     if(riverScore > 1.5) {
-        const riverWidth = Math.min(20, (riverScore - 1.5) * 5)
-        const riverOpacity = Math.min(0.8, riverScore / 5)
-        const riverPosition = 100 + (riverScore * 10)
+        const riverWidth = Math.min(50, (riverScore - 1.5) * 5);
+        const riverOpacity = Math.min(0.8, riverScore / 5);
+        const riverPosition = 100 + (riverScore * 10);
         
-        const river = document.createElement('div')
-        river.style.position = 'absolute'
-        river.style.top = `${riverPosition}px`
-        river.style.left = '0'
-        river.style.width = '100%'
-        river.style.height = `${riverWidth}px`
-        river.style.background = `linear-gradient(90deg, rgba(33, 150, 243, 0), rgba(33, 150, 243, ${riverOpacity}), rgba(33, 150, 243, 0))`
-        river.style.zIndex = '3'
-        river.title = `河流: ${riverScore.toFixed(2)}`
-        map.appendChild(river)
+        const river = document.createElement('div');
+        river.style.position = 'absolute';
+        river.style.top = `${riverPosition}px`;
+        river.style.left = '0';
+        river.style.width = '100%';
+        river.style.height = `${riverWidth}px`;
+        river.style.background = `linear-gradient(90deg, rgba(33, 150, 243, 0), rgba(33, 150, 243, ${riverOpacity}), rgba(33, 150, 243, 0))`;
+        river.style.zIndex = '3';
+        river.title = `河流: ${riverScore.toFixed(2)}`;
+        map.appendChild(river);
         
         // 添加波纹效果
         for(let i = 0; i < Math.floor(riverScore * 3); i++) {
-            const ripple = document.createElement('div')
-            ripple.style.position = 'absolute'
-            ripple.style.top = `${riverPosition - 5}px`
-            ripple.style.left = `${Math.random() * 100}%`
-            ripple.style.width = '2px'
-            ripple.style.height = '10px'
-            ripple.style.backgroundColor = 'rgba(33, 150, 243, 0.6)'
-            ripple.style.borderRadius = '50%'
-            ripple.style.zIndex = '3'
-            map.appendChild(ripple)
+            const ripple = document.createElement('div');
+            ripple.style.position = 'absolute';
+            ripple.style.top = `${riverPosition - 5}px`;
+            ripple.style.left = `${Math.random() * 100}%`;
+            ripple.style.width = '2px';
+            ripple.style.height = '10px';
+            ripple.style.backgroundColor = 'rgba(33, 150, 243, 0.6)';
+            ripple.style.borderRadius = '50%';
+            ripple.style.zIndex = '3';
+            map.appendChild(ripple);
         }
     }
     
     // 火山 - 右上方红色三角形
     if(volcanoScore > 1.5) {
-        const volcanoSize = Math.min(80, (volcanoScore - 1.5) * 20)
-        const volcanoOpacity = Math.min(1, volcanoScore / 5)
+        const volcanoSize = Math.min(120, (volcanoScore - 1.5) * 20);
+        const volcanoOpacity = Math.min(1, volcanoScore / 5);
         
-        const volcano = document.createElement('div')
-        volcano.style.position = 'absolute'
-        volcano.style.bottom = '80px'
-        volcano.style.right = '20%'
-        volcano.style.width = '0'
-        volcano.style.height = '0'
-        volcano.style.borderLeft = `${volcanoSize/2}px solid transparent`
-        volcano.style.borderRight = `${volcanoSize/2}px solid transparent`
-        volcano.style.borderBottom = `${volcanoSize}px solid rgba(229, 57, 53, ${volcanoOpacity})`
-        volcano.style.opacity = volcanoOpacity
-        volcano.style.zIndex = '4'
-        volcano.title = `火山: ${volcanoScore.toFixed(2)}`
-        map.appendChild(volcano)
+        const volcano = document.createElement('div');
+        volcano.style.position = 'absolute';
+        volcano.style.bottom = '90px';
+        volcano.style.right = '20%';
+        volcano.style.width = '0';
+        volcano.style.height = '0';
+        volcano.style.borderLeft = `${volcanoSize/2}px solid transparent`;
+        volcano.style.borderRight = `${volcanoSize/2}px solid transparent`;
+        volcano.style.borderBottom = `${volcanoSize}px solid rgba(229, 57, 53, ${volcanoOpacity})`;
+        volcano.style.opacity = volcanoOpacity;
+        volcano.style.zIndex = '4';
+        volcano.title = `火山: ${volcanoScore.toFixed(2)}`;
+        map.appendChild(volcano);
         
         // 添加烟雾效果
         if(volcanoScore > 3) {
-            const smoke = document.createElement('div')
-            smoke.style.position = 'absolute'
-            smoke.style.bottom = `${80 + volcanoSize}px`
-            smoke.style.right = `${20 - 2}%`
-            smoke.style.width = '20px'
-            smoke.style.height = '30px'
-            smoke.style.background = 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(200,200,200,0.4) 100%)'
-            smoke.style.borderRadius = '50%'
-            smoke.style.zIndex = '5'
-            smoke.style.animation = 'smokeRise 3s infinite alternate'
-            map.appendChild(smoke)
+            const smoke = document.createElement('div');
+            smoke.style.position = 'absolute';
+            smoke.style.bottom = `${80 + volcanoSize}px`;
+            smoke.style.right = `${20 - 2}%`;
+            smoke.style.width = '20px';
+            smoke.style.height = '50px';
+            smoke.style.background = 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(200,200,200,0.4) 100%)';
+            smoke.style.borderRadius = '80%';
+            smoke.style.zIndex = '5';
+            smoke.style.animation = 'smokeRise 3s infinite alternate';
+            map.appendChild(smoke);
         }
     }
     
     // 山脉 - 底部灰色三角形
     if(mountainScore > 1.5) {
-        const mountainSize = Math.min(120, (mountainScore - 1.5) * 30)
-        const mountainOpacity = Math.min(1, mountainScore / 5)
+        const mountainSize = Math.min(150, (mountainScore - 1.5) * 30);
+        const mountainOpacity = Math.min(1, mountainScore / 5);
         
-        const mountain = document.createElement('div')
-        mountain.style.position = 'absolute'
-        mountain.style.bottom = '0'
-        mountain.style.left = '60%'
-        mountain.style.width = '0'
-        mountain.style.height = '0'
-        mountain.style.borderLeft = `${mountainSize/2}px solid transparent`
-        mountain.style.borderRight = `${mountainSize/2}px solid transparent`
-        mountain.style.borderBottom = `${mountainSize}px solid rgba(117, 117, 117, ${mountainOpacity})`
-        mountain.style.opacity = mountainOpacity
-        mountain.style.zIndex = '6'
-        mountain.title = `山脉: ${mountainScore.toFixed(2)}`
-        map.appendChild(mountain)
+        const mountain = document.createElement('div');
+        mountain.style.position = 'absolute';
+        mountain.style.bottom = '0';
+        mountain.style.left = '60%';
+        mountain.style.width = '0';
+        mountain.style.height = '0';
+        mountain.style.borderLeft = `${mountainSize/2}px solid transparent`;
+        mountain.style.borderRight = `${mountainSize/2}px solid transparent`;
+        mountain.style.borderBottom = `${mountainSize}px solid rgba(117, 117, 117, ${mountainOpacity})`;
+        mountain.style.opacity = mountainOpacity;
+        mountain.style.zIndex = '6';
+        mountain.title = `山脉: ${mountainScore.toFixed(2)}`;
+        map.appendChild(mountain);
         
         // 添加雪顶
         if(mountainScore > 3) {
-            const snow = document.createElement('div')
-            snow.style.position = 'absolute'
-            snow.style.bottom = `${mountainSize}px`
-            snow.style.left = `${60 - 3}%`
-            snow.style.width = '30px'
-            snow.style.height = '15px'
-            snow.style.background = 'linear-gradient(to bottom, white, #e0e0e0)'
-            snow.style.borderRadius = '50%'
-            snow.style.zIndex = '7'
-            map.appendChild(snow)
+            const snow = document.createElement('div');
+            snow.style.position = 'absolute';
+            snow.style.bottom = `${mountainSize}px`;
+            snow.style.left = `${60 - 3}%`;
+            snow.style.width = '30px';
+            snow.style.height = '15px';
+            snow.style.background = 'linear-gradient(to bottom, white, #e0e0e0)';
+            snow.style.borderRadius = '50%';
+            snow.style.zIndex = '7';
+            map.appendChild(snow);
         }
     }
     
@@ -778,67 +773,67 @@ function drawMap(avg){
         {text: `河流: ${riverScore.toFixed(2)}`, color: '#2196f3', pos: 'top', left: '40%'},
         {text: `火山: ${volcanoScore.toFixed(2)}`, color: '#e53935', pos: 'top', left: '70%'},
         {text: `山脉: ${mountainScore.toFixed(2)}`, color: '#757575', pos: 'top', left: '90%'}
-    ]
+    ];
     
     labels.forEach(label => {
-        const labelEl = document.createElement('div')
-        labelEl.textContent = label.text
-        labelEl.style.position = 'absolute'
-        labelEl.style[label.pos] = '10px'
-        labelEl.style.left = label.left
-        labelEl.style.transform = 'translateX(-50%)'
-        labelEl.style.background = 'rgba(255,255,255,0.8)'
-        labelEl.style.padding = '5px 10px'
-        labelEl.style.borderRadius = '10px'
-        labelEl.style.fontWeight = 'bold'
-        labelEl.style.color = label.color
-        labelEl.style.fontSize = '14px'
-        labelEl.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)'
-        labelEl.style.zIndex = '10'
-        map.appendChild(labelEl)
-    })
+        const labelEl = document.createElement('div');
+        labelEl.textContent = label.text;
+        labelEl.style.position = 'absolute';
+        labelEl.style[label.pos] = '10px';
+        labelEl.style.left = label.left;
+        labelEl.style.transform = 'translateX(-50%)';
+        labelEl.style.background = 'rgba(255,255,255,0.8)';
+        labelEl.style.padding = '5px 10px';
+        labelEl.style.borderRadius = '10px';
+        labelEl.style.fontWeight = 'bold';
+        labelEl.style.color = label.color;
+        labelEl.style.fontSize = '14px';
+        labelEl.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        labelEl.style.zIndex = '10';
+        map.appendChild(labelEl);
+    });
     
     // 添加动画效果
-    const style = document.createElement('style')
+    const style = document.createElement('style');
     style.textContent = `
         @keyframes smokeRise {
             0% { transform: translateY(0) scale(1); opacity: 0.8; }
             100% { transform: translateY(-30px) scale(1.2); opacity: 0.3; }
         }
-    `
-    document.head.appendChild(style)
+    `;
+    document.head.appendChild(style);
 }
 
 function showResult(avg){
     // 计算各维度间的差异
-    let sortedAvg = [...avg].sort((a, b) => b - a)
-    let maxDiff = sortedAvg[0] - sortedAvg[3]  // 最大值与最小值差
+    let sortedAvg = [...avg].sort((a, b) => b - a);
+    let maxDiff = sortedAvg[0] - sortedAvg[3];  // 最大值与最小值差
     
     // 如果最大差异小于阈值，认为是均衡型
     if(maxDiff < 0.5) {
         document.getElementById("result").innerHTML = 
-        "<h2>复合创造者</h2><p>你的创造结构呈现均衡状态，各维度发展相对平衡，具备综合创造力</p>"
-        return
+        "<h2>复合创造者</h2><p>你的创造结构呈现均衡状态，各维度发展相对平衡，具备综合创造力</p>";
+        return;
     }
     
     // 计算前两名
-    let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a])
-    let first=index[0]
-    let second=index[1]
+    let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a]);
+    let first=index[0];
+    let second=index[1];
     
     // 检查主次维度差异是否足够大
-    let primaryThreshold = 0.4  // 主次维度至少相差0.4
+    let primaryThreshold = 0.4;  // 主次维度至少相差0.4
     if(avg[first] - avg[second] < primaryThreshold) {
         document.getElementById("result").innerHTML = 
-        "<h2>复合创造者</h2><p>你的创造结构呈现均衡状态，各维度发展相对平衡，具备综合创造力</p>"
-        return
+        "<h2>复合创造者</h2><p>你的创造结构呈现均衡状态，各维度发展相对平衡，具备综合创造力</p>";
+        return;
     }
     
     // 检查绝对分数阈值
     if(avg[first] < 3.0) {
         document.getElementById("result").innerHTML = 
-        "<h2>潜质创造者</h2><p>你的创造力有待进一步发掘，在主要维度上还有提升空间</p>"
-        return
+        "<h2>潜质创造者</h2><p>你的创造力有待进一步发掘，在主要维度上还有提升空间</p>";
+        return;
     }
     
     const types={
@@ -850,25 +845,26 @@ function showResult(avg){
         "0-3":["秩序观察者","你在观察世界中建立结构"],
         "2-1":["行动思想家","实践不断生成新的概念"],
         "3-2":["系统创造者","结构与生成形成强大创造力"]
-    }
+    };
 
-    let key=`${first}-${second}`
-    let type=types[key] || ["复合创造者","你的创造结构呈现均衡状态"]
+    let key=`${first}-${second}`;
+    let type=types[key] || ["复合创造者","你的创造结构呈现均衡状态"];
 
     document.getElementById("result").innerHTML=
-    "<h2>"+type[0]+"</h2><p>"+type[1]+"</p>"
+    "<h2>"+type[0]+"</h2><p>"+type[1]+"</p>";
 }
 
 function download(){
     html2canvas(document.getElementById("app")).then(canvas=>{
-        let link=document.createElement("a")
-        link.download="creativity-ecology.png"
-        link.href=canvas.toDataURL()
-        link.click()
-    })
+        let link=document.createElement("a");
+        link.download="creativity-ecology.png";
+        link.href=canvas.toDataURL();
+        link.click();
+    });
 }
 </script>
 </body>
 </html>
+
 
 
