@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>优化版创造力生态图谱 - 视觉增强</title>
+<title>视觉增强版创造力生态图谱</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <style>
 body{
-font-family:Arial, sans-serif;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 background: linear-gradient(135deg, #f0f3f5 0%, #e6ebef 100%);
 margin:0;
 padding:20px;
@@ -57,10 +57,11 @@ padding: 15px;
 border-radius: 12px;
 transition: all 0.3s ease;
 position: relative;
+background-color: #f8f9fa;
 }
 
 .question:hover {
-    background-color: #f8f9fa;
+    background-color: #e9ecef;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.08);
 }
@@ -95,6 +96,10 @@ margin-top:12px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    color: #495057;
+    font-weight: normal;
     background: #f8f9fa;
     border: 1px solid #e9ecef;
 }
@@ -108,12 +113,30 @@ margin-top:12px;
     transform: scale(1.05);
 }
 
+/* 未选中的选项样式 */
+.scale label {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: normal;
+}
+
+/* 选中的选项样式 */
 .scale input[type="radio"]:checked + label {
-    background: #2e7d32;
-    color: white;
-    font-weight: bold;
+    background: #2e7d32 !important;
+    color: white !important;
+    font-weight: bold !important;
     transform: scale(1.1);
     box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
+}
+
+/* 在选中项上添加勾选标记 */
+.scale input[type="radio"]:checked + label::after {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 5px;
+    font-size: 12px;
+    color: white;
 }
 
 button{
@@ -175,11 +198,13 @@ box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
     flex: 1;
     min-width: 200px;
     transition: all 0.3s ease;
+    border: 2px solid transparent;
 }
 
-.dimension-card:hover {
+.dimension-card.active {
+    border-color: #2e7d32;
+    box-shadow: 0 8px 20px rgba(46, 125, 50, 0.2);
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
 
 .dimension-title {
@@ -242,12 +267,31 @@ border: 1px solid #dee2e6;
 .river-color { background-color: #2196f3; }
 .volcano-color { background-color: #e53935; }
 .mountain-color { background-color: #757575; }
+
+.validation-message {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
 </style>
 </head>
 
 <body>
 <div class="container" id="app">
-<h1>创造力生态图谱</h1>
+<h1>视觉增强版创造力生态图谱</h1>
 <p class="description">回答问题，生成你的创造生态</p>
 
 <div class="legend">
@@ -271,26 +315,27 @@ border: 1px solid #dee2e6;
 
 <div id="questions"></div>
 
-<button onclick="calculate()">生成创造图谱</button>
+<button onclick="validateAndCalculate()">生成创造图谱</button>
+<div id="validationMessage" class="validation-message" style="display: none;"></div>
 
 <div id="radarChartContainer">
     <canvas id="radarChart"></canvas>
 </div>
 
 <div class="score-display">
-    <div class="dimension-card">
+    <div class="dimension-card" id="forest-card">
         <div class="dimension-title">森林 (感知)</div>
         <div id="forest-score" class="dimension-score">-</div>
     </div>
-    <div class="dimension-card">
+    <div class="dimension-card" id="river-card">
         <div class="dimension-title">河流 (连接)</div>
         <div id="river-score" class="dimension-score">-</div>
     </div>
-    <div class="dimension-card">
+    <div class="dimension-card" id="volcano-card">
         <div class="dimension-title">火山 (创新)</div>
         <div id="volcano-score" class="dimension-score">-</div>
     </div>
-    <div class="dimension-card">
+    <div class="dimension-card" id="mountain-card">
         <div class="dimension-title">山脉 (结构)</div>
         <div id="mountain-score" class="dimension-score">-</div>
     </div>
@@ -347,14 +392,12 @@ questions.forEach((q,i)=>{
     const dimensionNames = ['forest', 'river', 'volcano', 'mountain']
     div.classList.add(dimensionNames[dimensionIndex])
     
-    let dimName = ["森林(感知)", "河流(连接)", "火山(创新)", "山脉(结构)"][Math.floor(i/6)]
-    
-    let html=`<p>${i+1}. ${q} <small style="color:#7f8c8d;">[${dimName}]</small></p><div class="scale">`
+    let html=`<p>${i+1}. ${q}</p><div class="scale">`
     
     for(let s=1;s<=5;s++){
         html+=`
-        <label>
-            <input type="radio" name="q${i}" value="${s}">
+        <label for="q${i}_${s}">
+            <input type="radio" id="q${i}_${s}" name="q${i}" value="${s}" onchange="updateQuestionStatus(${i})">
             ${s}
         </label>
         `
@@ -365,8 +408,69 @@ questions.forEach((q,i)=>{
     container.appendChild(div)
 })
 
+// 跟踪每个问题是否已回答
+const answeredQuestions = Array(questions.length).fill(false)
+
+function updateQuestionStatus(questionIndex) {
+    // 检查该问题是否被选中
+    const radios = document.getElementsByName(`q${questionIndex}`)
+    for (let r of radios) {
+        if (r.checked) {
+            answeredQuestions[questionIndex] = true
+            break
+        }
+    }
+}
+
+function validateAndCalculate() {
+    // 检查所有问题是否都已回答
+    const unAnswered = []
+    for (let i = 0; i < questions.length; i++) {
+        const radios = document.getElementsByName(`q${i}`)
+        let hasChecked = false
+        for (let r of radios) {
+            if (r.checked) {
+                hasChecked = true
+                break
+            }
+        }
+        if (!hasChecked) {
+            unAnswered.push(i + 1)
+        }
+    }
+    
+    const messageElement = document.getElementById('validationMessage')
+    
+    if (unAnswered.length > 0) {
+        messageElement.textContent = `请完成以下问题：${unAnswered.join(', ')}`
+        messageElement.className = 'validation-message error'
+        messageElement.style.display = 'block'
+        
+        // 高亮未回答的问题
+        unAnswered.forEach(index => {
+            const questionDiv = document.querySelector(`.question:nth-child(${index})`)
+            questionDiv.style.backgroundColor = '#f8d7da'
+            questionDiv.style.borderColor = '#c62828'
+        })
+        
+        return false
+    } else {
+        messageElement.textContent = '所有问题已完成，正在生成图谱...'
+        messageElement.className = 'validation-message success'
+        messageElement.style.display = 'block'
+        
+        setTimeout(() => {
+            calculate()
+            messageElement.style.display = 'none'
+        }, 1000)
+        
+        return true
+    }
+}
+
 function calculate(){
     let scores=[0,0,0,0]
+    let validResponses = 0
     
     for(let i=0;i<24;i++){
         let radios=document.getElementsByName("q"+i)
@@ -375,17 +479,49 @@ function calculate(){
             if(r.checked){
                 let group=Math.floor(i/6)
                 scores[group]+=parseInt(r.value)
+                validResponses++
+                break // 确保每个问题只计算一次
             }
         }
     }
     
+    // 检查是否所有问题都有答案
+    if(validResponses !== 24) {
+        console.error("计分异常：并非所有问题都有答案")
+        return
+    }
+    
     let avg=scores.map(s=>s/6)
     
-    // 更新分数显示
-    document.getElementById("forest-score").textContent = avg[0].toFixed(2)
-    document.getElementById("river-score").textContent = avg[1].toFixed(2)
-    document.getElementById("volcano-score").textContent = avg[2].toFixed(2)
-    document.getElementById("mountain-score").textContent = avg[3].toFixed(2)
+    // 更新分数显示并高亮活跃维度
+    const scoreElements = [
+        document.getElementById("forest-score"),
+        document.getElementById("river-score"),
+        document.getElementById("volcano-score"),
+        document.getElementById("mountain-score")
+    ]
+    
+    const cardElements = [
+        document.getElementById("forest-card"),
+        document.getElementById("river-card"),
+        document.getElementById("volcano-card"),
+        document.getElementById("mountain-card")
+    ]
+    
+    // 移除所有激活状态
+    cardElements.forEach(card => card.classList.remove('active'))
+    
+    // 更新分数并高亮最高分维度
+    scoreElements.forEach((el, idx) => {
+        el.textContent = avg[idx].toFixed(2)
+    })
+    
+    // 找出最高分维度并高亮
+    const maxScore = Math.max(...avg)
+    const maxIndex = avg.indexOf(maxScore)
+    if(maxIndex !== -1) {
+        cardElements[maxIndex].classList.add('active')
+    }
     
     drawChart(avg)
     drawMap(avg)
