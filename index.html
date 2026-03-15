@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta charset="UTF-8">
-<title>创造力生态图谱实验室</title>
+<title>创造力生态图谱</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <style>
-
 body{
 font-family:Arial;
 background:#f0f3f5;
@@ -27,13 +25,13 @@ border-radius:14px;
 box-shadow:0 15px 40px rgba(0,0,0,0.1);
 }
 
-h1{
+h1,h2{
 margin-bottom:10px;
 }
 
 .question{
 text-align:left;
-margin:22px 0;
+margin:20px 0;
 }
 
 .scale{
@@ -53,6 +51,10 @@ border-radius:8px;
 cursor:pointer;
 }
 
+canvas{
+margin-top:40px;
+}
+
 #map{
 margin-top:40px;
 height:260px;
@@ -62,31 +64,29 @@ overflow:hidden;
 background:#e6ecef;
 }
 
-canvas{
-margin-top:40px;
+.layer{
+position:absolute;
+bottom:0;
+width:100%;
 }
 
 .result{
 margin-top:30px;
-font-size:18px;
+font-size:16px;
 line-height:1.6;
+text-align:left;
 }
-
 </style>
-
 </head>
 
 <body>
-
 <div class="container" id="app">
-
-<h1>创造力生态图谱</h1>
-
-<p>回答问题，生成你的创造生态。</p>
+<h1>创造力生态报告</h1>
+<p>请回答 24 个问题，探索你的创造生态。</p>
 
 <div id="questions"></div>
 
-<button onclick="calculate()">生成创造图谱</button>
+<button onclick="calculate()">生成报告</button>
 
 <canvas id="radarChart"></canvas>
 
@@ -94,191 +94,127 @@ line-height:1.6;
 
 <div id="result" class="result"></div>
 
-<button onclick="download()">保存结果图片</button>
-
+<button onclick="download()">保存报告图片</button>
 </div>
 
 <script>
-
+// 测试题
 const questions=[
-
 "我经常注意到别人忽略的细节",
 "光线或材质变化会吸引我",
 "观察环境会激发创意",
 "我喜欢记录生活细节",
 "进入空间会观察结构",
 "细节是创作来源",
-
 "我喜欢连接不同领域",
 "不相关事物会形成联系",
 "跨学科内容激发灵感",
 "喜欢组合不同媒介",
 "创意来自元素重组",
 "从多个角度理解问题",
-
 "我经常产生新想法",
 "尝试未知方法让我兴奋",
 "喜欢实验新方式",
 "打破规则产生创造",
 "行动会产生灵感",
 "愿意尝试未成熟想法",
-
 "我会思考创作结构",
 "喜欢建立框架",
 "会整理想法",
 "结构让作品清晰",
 "考虑部分关系",
 "喜欢秩序设计"
+];
 
-]
-
-const container=document.getElementById("questions")
+const container=document.getElementById("questions");
 
 questions.forEach((q,i)=>{
+    let div=document.createElement("div");
+    div.className="question";
+    let html=`<p>${i+1}. ${q}</p><div class="scale">`;
+    for(let s=1;s<=5;s++){
+        html+=`<label><input type="radio" name="q${i}" value="${s}">${s}</label>`;
+    }
+    html+="</div>";
+    div.innerHTML=html;
+    container.appendChild(div);
+});
 
-let div=document.createElement("div")
-div.className="question"
-
-let html=`<p>${i+1}. ${q}</p><div class="scale">`
-
-for(let s=1;s<=5;s++){
-
-html+=`
-<label>
-<input type="radio" name="q${i}" value="${s}">
-${s}
-</label>
-`
-
-}
-
-html+="</div>"
-
-div.innerHTML=html
-
-container.appendChild(div)
-
-})
-
+// 计算
 function calculate(){
-
-let scores=[0,0,0,0]
-
-for(let i=0;i<24;i++){
-
-let radios=document.getElementsByName("q"+i)
-
-for(let r of radios){
-
-if(r.checked){
-
-let group=Math.floor(i/6)
-scores[group]+=parseInt(r.value)
-
+    let scores=[0,0,0,0];
+    for(let i=0;i<24;i++){
+        let radios=document.getElementsByName("q"+i);
+        for(let r of radios){
+            if(r.checked){
+                scores[Math.floor(i/6)]+=parseInt(r.value);
+            }
+        }
+    }
+    let avg=scores.map(s=>s/6);
+    drawChart(avg);
+    drawMap(avg);
+    showReport(avg);
 }
 
-}
-
-}
-
-let avg=scores.map(s=>s/6)
-
-drawChart(avg)
-drawMap(avg)
-showResult(avg)
-
-}
-
+// 雷达图
 function drawChart(data){
-
-new Chart(document.getElementById("radarChart"),{
-
-type:"radar",
-
-data:{
-labels:["森林","河流","火山","山脉"],
-datasets:[{
-label:"创造力结构",
-data:data
-}]
-},
-
-options:{
-scales:{r:{min:1,max:5}}
+    new Chart(document.getElementById("radarChart"),{
+        type:"radar",
+        data:{
+            labels:["森林","河流","火山","山脉"],
+            datasets:[{label:"创造力结构",data:data,fill:true,backgroundColor:"rgba(46,125,50,0.2)",borderColor:"#2e7d32"}]
+        },
+        options:{scales:{r:{min:1,max:5}}}
+    });
 }
 
-})
-
-}
-
+// 生态图
 function drawMap(avg){
-
-let map=document.getElementById("map")
-
-let forest=avg[0]
-let river=avg[1]
-let volcano=avg[2]
-let mountain=avg[3]
-
-let html=""
-
-if(forest>3)
-html+=`<div style="position:absolute;bottom:0;width:100%;height:80px;background:#2e7d32"></div>`
-
-if(river>3)
-html+=`<div style="position:absolute;width:100%;height:8px;background:#2196f3;top:120px"></div>`
-
-if(volcano>3)
-html+=`<div style="position:absolute;bottom:80px;left:50%;width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:60px solid #e53935"></div>`
-
-if(mountain>3)
-html+=`<div style="position:absolute;bottom:0;left:20%;width:0;height:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:100px solid #757575"></div>`
-
-map.innerHTML=html
-
+    let map=document.getElementById("map");
+    let html="";
+    if(avg[0]>3) html+=`<div class="layer" style="height:${avg[0]*20}px;background:#2e7d32"></div>`;
+    if(avg[1]>3) html+=`<div class="layer" style="height:8px;background:#2196f3;top:120px"></div>`;
+    if(avg[2]>3) html+=`<div class="layer" style="height:60px;background:#e53935;bottom:60px;position:absolute;width:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:60px solid #e53935;"></div>`;
+    if(avg[3]>3) html+=`<div class="layer" style="height:100px;background:#757575;bottom:0;position:absolute;width:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:100px solid #757575;"></div>`;
+    map.innerHTML=html;
 }
 
-function showResult(avg){
+// 八种创造原型
+const prototypes={
+"0-1":{name:"感知诗人",type:"观察与连接",style:"细致观察与意义连接",risk:"过度敏感、犹豫不决",advice:"尝试将观察转化为行动，积累作品",artists:"莫奈、林风眠"},
+"1-2":{name:"概念炼金术士",type:"整合与生成",style:"跨领域概念创新",risk:"过度理论化、脱离实践",advice:"将概念落地于具体创作",artists:"达利、草间弥生"},
+"2-3":{name:"世界建造者",type:"生成与结构",style:"系统构建与完整世界",risk:"过度复杂、行动缓慢",advice:"关注细节与感官体验",artists:"宫崎骏、Escher"},
+"0-2":{name:"实验探索者",type:"观察与生成",style:"实践中观察与创造",risk:"缺乏体系性",advice:"建立创作框架",artists:"约瑟夫·博伊斯"},
+"1-3":{name:"结构策展人",type:"整合与结构",style:"整合思想与秩序建构",risk:"过于规整、缺乏激情",advice:"加入意外元素与实验",artists:"贝聿铭"},
+"0-3":{name:"秩序观察者",type:"观察与结构",style:"观察世界与建立秩序",risk:"谨慎过度、创造力保守",advice:"尝试实验和跨界合作",artists:"北斋"},
+"2-1":{name:"行动思想家",type:"生成与整合",style:"实践中连接新概念",risk:"冲动、粗糙",advice:"反思总结经验",artists:"安迪·沃霍尔"},
+"3-2":{name:"系统创造者",type:"结构与生成",style:"系统构建与创意爆发",risk:"复杂难控",advice:"简化流程、逐步迭代",artists:"扎哈·哈迪德"}
+};
 
-let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a])
-
-let first=index[0]
-let second=index[1]
-
-const types={
-"0-1":["感知诗人","你的创造力来源于细致观察和微小感知。引导你关注身边的自然与生活细节。日常观察练习、自然素描、摄影、环境装置。代表艺术家：安塞尔·亚当斯"],
-"1-2":["概念炼金术士","你擅长跨领域整合，把不同元素重新组合成新概念。引导你寻找学科间联系，尝试概念实验。概念设计、装置艺术、跨媒介实验、思想碰撞。代表艺术家：马塞尔·杜尚"],
-"2-3":["世界建造者","你善于构建完整系统与结构。引导你规划复杂项目、建立框架，将创意变成可感知的‘世界’。沉浸式艺术、展览设计、虚拟空间构建。代表艺术家：詹姆斯·特瑞尔"],
-"0-2":["实验探索者","你通过行动和实验生成创意。引导你大胆尝试未知方法，不怕失败，把实践作为思维延伸。行为艺术、实验工作坊、即兴表演。代表艺术家：约瑟夫·博伊斯"],
-"1-3":["结构策展人","你能整合想法并构建秩序，使复杂内容条理清晰。引导你思考体系、流程与空间关系。展览策划、装置艺术、交互设计。代表艺术家：马丁·克里德"],
-"0-3":["秩序观察者","你同时具备观察敏感和结构化思维。引导你在感知世界时建立秩序，使创作更具可控性与深度。书法、结构绘画、建筑小品。代表艺术家：李可染"],
-"2-1":["行动思想家","你在实践中不断生成新概念。引导你通过实验和行动发现创意规律，把动手与思考结合。行为艺术、社会实验、动态装置。代表艺术家：马里奥·梅林"],
-"3-2":["系统创造者","你能将结构和生成结合，形成强大创造力。引导你建立多层次作品体系，让创意既有秩序又充满活力。系统装置、交互艺术、游戏设计。代表艺术家：克里斯·伯登"]
+function showReport(avg){
+    let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a]);
+    let first=index[0],second=index[1];
+    let key=`${first}-${second}`;
+    let p=prototypes[key] || {name:"复合创造者",type:"均衡",style:"四维度均衡发挥",risk:"缺乏突出方向",advice:"根据兴趣强化维度",artists:"无"};
+    document.getElementById("result").innerHTML=
+    `<h2>${p.name}</h2>
+    <p><b>创造气质：</b>${p.style}</p>
+    <p><b>创造方式：</b>${p.type}</p>
+    <p><b>潜在风险：</b>${p.risk}</p>
+    <p><b>发展建议：</b>${p.advice}</p>
+    <p><b>代表艺术家：</b>${p.artists}</p>`;
 }
 
-let key=`${first}-${second}`
-
-let type=types[key] || ["复合创造者","你的创造结构呈现均衡状态"]
-
-document.getElementById("result").innerHTML=
-
-"<h2>"+type[0]+"</h2><p>"+type[1]+"</p>"
-
-}
-
+// 下载图片
 function download(){
-
-html2canvas(document.getElementById("app")).then(canvas=>{
-
-let link=document.createElement("a")
-link.download="creativity-ecology.png"
-link.href=canvas.toDataURL()
-link.click()
-
-})
-
+    html2canvas(document.getElementById("app")).then(canvas=>{
+        let link=document.createElement("a");
+        link.download="creativity-report.png";
+        link.href=canvas.toDataURL();
+        link.click();
+    });
 }
-
 </script>
 
 </body>
