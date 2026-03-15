@@ -2,87 +2,103 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>你创造力生态图谱</title>
+<title>创造力生态图谱测试</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 <style>
 body{
-  font-family: Arial;
-  background: #f0f3f5;
-  margin: 0;
-  padding: 40px;
-  text-align: center;
+font-family:Arial;
+background:#f0f3f5;
+margin:0;
+padding:40px;
+text-align:center;
 }
+
 .container{
-  max-width: 900px;
-  margin: auto;
-  background: white;
-  padding: 40px;
-  border-radius: 14px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+max-width:900px;
+margin:auto;
+background:white;
+padding:40px;
+border-radius:14px;
+box-shadow:0 15px 40px rgba(0,0,0,0.1);
 }
-h1,h2{margin-bottom:10px;}
-.question{text-align:left;margin:20px 0;}
-.scale{display:flex;justify-content:space-between;margin-top:6px;}
+
+h1,h2{
+margin-bottom:10px;
+}
+
+.question{
+text-align:left;
+margin:20px 0;
+}
+
+.scale{
+display:flex;
+justify-content:space-between;
+margin-top:6px;
+}
+
 button{
-  margin-top:30px;
-  padding:14px 24px;
-  font-size:16px;
-  background:#2e7d32;
-  color:white;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
+margin-top:30px;
+padding:14px 24px;
+font-size:16px;
+background:#2e7d32;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
 }
+
+canvas{
+margin-top:40px;
+}
+
 #map{
-  margin-top:40px;
-  height:260px;
-  border-radius:12px;
-  position:relative;
-  overflow:hidden;
-  background:#e6ecef;
+margin-top:40px;
+height:260px;
+border-radius:12px;
+position:relative;
+overflow:hidden;
+background:#e6ecef;
 }
+
 .layer{
-  position:absolute;
-  bottom:0;
-  width:60px;
-  transition: all 1s ease;
-  border-radius: 6px 6px 0 0;
+position:absolute;
+bottom:0;
+width:100%;
 }
-.layer span{
-  position:absolute;
-  top:-24px;
-  left:50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.6);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  display: none;
-}
-.layer:hover span{display:block;}
+
 .result{
-  margin-top:30px;
-  font-size:16px;
-  line-height:1.6;
-  text-align:left;
+margin-top:30px;
+font-size:16px;
+line-height:1.6;
+text-align:left;
 }
 </style>
 </head>
+
 <body>
 <div class="container" id="app">
-<h1>创造力生态图谱</h1>
-<p>回答 24 个问题，探索你的创造力生态。</p>
+<h1>你的创造力生态图谱</h1>
+<p>请回答 24 个问题，探索你的创造力。</p>
+
 <div id="questions"></div>
-<button onclick="calculate()">生成生态图</button>
+
+<button onclick="calculate()">生成报告</button>
+
+<canvas id="radarChart"></canvas>
+
 <div id="map"></div>
+
 <div id="result" class="result"></div>
+
 <button onclick="download()">保存报告图片</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
 <script>
-// 题目
+// 测试题
 const questions=[
 "我经常注意到别人忽略的细节",
 "光线或材质变化会吸引我",
@@ -111,19 +127,60 @@ const questions=[
 ];
 
 const container=document.getElementById("questions");
+
 questions.forEach((q,i)=>{
-  let div=document.createElement("div");
-  div.className="question";
-  let html=`<p>${i+1}. ${q}</p><div class="scale">`;
-  for(let s=1;s<=5;s++){
-    html+=`<label><input type="radio" name="q${i}" value="${s}">${s}</label>`;
-  }
-  html+="</div>";
-  div.innerHTML=html;
-  container.appendChild(div);
+    let div=document.createElement("div");
+    div.className="question";
+    let html=`<p>${i+1}. ${q}</p><div class="scale">`;
+    for(let s=1;s<=5;s++){
+        html+=`<label><input type="radio" name="q${i}" value="${s}">${s}</label>`;
+    }
+    html+="</div>";
+    div.innerHTML=html;
+    container.appendChild(div);
 });
 
-// 八种原型
+// 计算
+function calculate(){
+    let scores=[0,0,0,0];
+    for(let i=0;i<24;i++){
+        let radios=document.getElementsByName("q"+i);
+        for(let r of radios){
+            if(r.checked){
+                scores[Math.floor(i/6)]+=parseInt(r.value);
+            }
+        }
+    }
+    let avg=scores.map(s=>s/6);
+    drawChart(avg);
+    drawMap(avg);
+    showReport(avg);
+}
+
+// 雷达图
+function drawChart(data){
+    new Chart(document.getElementById("radarChart"),{
+        type:"radar",
+        data:{
+            labels:["森林","河流","火山","山脉"],
+            datasets:[{label:"创造力结构",data:data,fill:true,backgroundColor:"rgba(46,125,50,0.2)",borderColor:"#2e7d32"}]
+        },
+        options:{scales:{r:{min:1,max:5}}}
+    });
+}
+
+// 生态图
+function drawMap(avg){
+    let map=document.getElementById("map");
+    let html="";
+    if(avg[0]>3) html+=`<div class="layer" style="height:${avg[0]*20}px;background:#2e7d32"></div>`;
+    if(avg[1]>3) html+=`<div class="layer" style="height:8px;background:#2196f3;top:120px"></div>`;
+    if(avg[2]>3) html+=`<div class="layer" style="height:60px;background:#e53935;bottom:60px;position:absolute;width:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:60px solid #e53935;"></div>`;
+    if(avg[3]>3) html+=`<div class="layer" style="height:100px;background:#757575;bottom:0;position:absolute;width:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:100px solid #757575;"></div>`;
+    map.innerHTML=html;
+}
+
+// 八种创造原型
 const prototypes={
 "0-1":{name:"感知诗人",type:"观察与连接",style:"细致观察与意义连接",risk:"过度敏感、犹豫不决",advice:"尝试将观察转化为行动，积累作品",artists:"莫奈、林风眠"},
 "1-2":{name:"概念炼金术士",type:"整合与生成",style:"跨领域概念创新",risk:"过度理论化、脱离实践",advice:"将概念落地于具体创作",artists:"达利、草间弥生"},
@@ -135,57 +192,12 @@ const prototypes={
 "3-2":{name:"系统创造者",type:"结构与生成",style:"系统构建与创意爆发",risk:"复杂难控",advice:"简化流程、逐步迭代",artists:"扎哈·哈迪德"}
 };
 
-// 生成结果
-function calculate(){
-  let scores=[0,0,0,0];
-  for(let i=0;i<24;i++){
-    let radios=document.getElementsByName("q"+i);
-    for(let r of radios){
-      if(r.checked){
-        scores[Math.floor(i/6)]+=parseInt(r.value);
-      }
-    }
-  }
-  let avg=scores.map(s=>s/6);
-  drawDynamicMap(avg);
-  showReport(avg);
-}
-
-// 动态生态图
-function drawDynamicMap(avg){
-  const map=document.getElementById("map");
-  map.innerHTML="";
-  const elements=[
-    {value:avg[0],color:"#2e7d32",label:"森林"},
-    {value:avg[1],color:"#2196f3",label:"河流"},
-    {value:avg[2],color:"#e53935",label:"火山"},
-    {value:avg[3],color:"#757575",label:"山脉"}
-  ];
-  elements.forEach((el,i)=>{
-    let div=document.createElement("div");
-    div.className="layer";
-    div.style.left=(i*100+50)+"px";
-    div.style.height="0px";
-    div.style.background=el.color;
-    div.setAttribute("data-score",`${el.label}: ${el.value.toFixed(1)}`);
-    let span=document.createElement("span");
-    span.innerText=`${el.label}: ${el.value.toFixed(1)}`;
-    div.appendChild(span);
-    map.appendChild(div);
-    // 动画渐升
-    setTimeout(()=>{
-      div.style.height=(el.value*40)+"px";
-    }, i*200);
-  });
-}
-
-// 报告显示
 function showReport(avg){
-  let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a]);
-  let first=index[0],second=index[1];
-  let key=`${first}-${second}`;
-  let p=prototypes[key] || {name:"复合创造者",type:"均衡",style:"四维度均衡发挥",risk:"缺乏突出方向",advice:"根据兴趣强化维度",artists:"无"};
-  document.getElementById("result").innerHTML=
+    let index=[0,1,2,3].sort((a,b)=>avg[b]-avg[a]);
+    let first=index[0],second=index[1];
+    let key=`${first}-${second}`;
+    let p=prototypes[key] || {name:"复合创造者",type:"均衡",style:"四维度均衡发挥",risk:"缺乏突出方向",advice:"根据兴趣强化维度",artists:"无"};
+    document.getElementById("result").innerHTML=
     `<h2>${p.name}</h2>
     <p><b>创造气质：</b>${p.style}</p>
     <p><b>创造方式：</b>${p.type}</p>
@@ -194,15 +206,16 @@ function showReport(avg){
     <p><b>代表艺术家：</b>${p.artists}</p>`;
 }
 
-// 保存图片
+// 下载图片
 function download(){
-  html2canvas(document.getElementById("app")).then(canvas=>{
-    let link=document.createElement("a");
-    link.download="creativity-ecology-dynamic.png";
-    link.href=canvas.toDataURL();
-    link.click();
-  });
+    html2canvas(document.getElementById("app")).then(canvas=>{
+        let link=document.createElement("a");
+        link.download="creativity-report.png";
+        link.href=canvas.toDataURL();
+        link.click();
+    });
 }
 </script>
+
 </body>
 </html>
