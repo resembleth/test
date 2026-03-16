@@ -4,41 +4,89 @@
 <meta charset="UTF-8">
 <title>艺术创造力原型测试</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
 body{
-font-family:Arial, sans-serif;
-background:#f4f4f4;
+font-family: "Helvetica Neue", Arial, sans-serif;
+background:#f5f5f7;
+color:#222;
 max-width:900px;
 margin:auto;
-padding:40px;
-line-height:1.6;
+padding:60px 30px;
+line-height:1.7;
 }
 
 h1{
 text-align:center;
+font-size:38px;
+letter-spacing:2px;
+margin-bottom:10px;
+}
+
+.subtitle{
+text-align:center;
+color:#666;
+margin-bottom:50px;
 }
 
 .question{
 background:white;
-padding:20px;
-margin:20px 0;
-border-radius:10px;
+padding:24px;
+margin:22px 0;
+border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,0.05);
+}
+
+.question p{
+font-weight:600;
+margin-bottom:10px;
+}
+
+label{
+display:block;
+margin:6px 0;
+cursor:pointer;
 }
 
 button{
 display:block;
-margin:40px auto;
-padding:14px 28px;
+margin:50px auto;
+padding:16px 40px;
 font-size:18px;
+border:none;
+background:black;
+color:white;
+border-radius:30px;
 cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+background:#333;
 }
 
 .result{
 background:white;
-padding:30px;
-border-radius:12px;
-margin-top:30px;
+padding:40px;
+border-radius:14px;
+margin-top:40px;
+box-shadow:0 8px 30px rgba(0,0,0,0.08);
+}
+
+.result h2{
+font-size:28px;
+margin-bottom:10px;
+}
+
+.result p{
+color:#555;
+}
+
+.chartBox{
+width:420px;
+margin:40px auto;
 }
 
 </style>
@@ -47,11 +95,11 @@ margin-top:30px;
 <body>
 
 <h1>艺术创造力原型测试</h1>
-<p style="text-align:center">回答24个问题，探索你的创造方式。</p>
+<p class="subtitle">回答24个问题，探索你的创造方式</p>
 
 <div id="quiz"></div>
 
-<button onclick="calculate()">查看测试结果</button>
+<button onclick="calculate()">查看创造地图</button>
 
 <div id="result" class="result"></div>
 
@@ -59,245 +107,77 @@ margin-top:30px;
 
 const questions = [
 
-{
-q:"当你进入一个陌生空间，你首先感知到：",
-o:[
-"A 氛围与情绪",
-"B 空间结构与秩序",
-"C 可以进行的活动",
-"D 这个空间表达的观念"
-]
-},
+{q:"当你进入一个陌生空间，你首先感知到：",
+o:["A 氛围与情绪","B 空间结构与秩序","C 可以进行的活动","D 这个空间表达的观念"]},
 
-{
-q:"当你观看一件艺术作品，你首先注意：",
-o:[
-"A 色彩和气息",
-"B 构图和形式",
-"C 材料和制作方式",
-"D 作品背后的思想"
-]
-},
+{q:"当你观看一件艺术作品，你首先注意：",
+o:["A 色彩和气息","B 构图和形式","C 材料和制作方式","D 作品背后的思想"]},
 
-{
-q:"在自然中散步时，你更容易注意到：",
-o:[
-"A 风、光线与气味",
-"B 地形和结构关系",
-"C 可以收集或操作的材料",
-"D 自然象征的意义"
-]
-},
+{q:"在自然中散步时，你更容易注意到：",
+o:["A 风、光线与气味","B 地形和结构关系","C 可以收集或操作的材料","D 自然象征的意义"]},
 
-{
-q:"当你观察世界时，你通常：",
-o:[
-"A 让感觉自然流动",
-"B 下意识寻找规律",
-"C 想象如何改变它",
-"D 思考它代表什么"
-]
-},
+{q:"当你观察世界时，你通常：",
+o:["A 让感觉自然流动","B 下意识寻找规律","C 想象如何改变它","D 思考它代表什么"]},
 
-{
-q:"当你回忆一个地方时，你最容易记住：",
-o:[
-"A 那里的气息与氛围",
-"B 空间的秩序与结构",
-"C 当时发生的事情",
-"D 它带给你的理解或启发"
-]
-},
+{q:"当你回忆一个地方时，你最容易记住：",
+o:["A 那里的气息与氛围","B 空间的秩序与结构","C 当时发生的事情","D 它带给你的理解或启发"]},
 
-{
-q:"当别人描述一个作品，你更关注：",
-o:[
-"A 感受体验",
-"B 形式逻辑",
-"C 制作过程",
-"D 概念含义"
-]
-},
+{q:"当别人描述一个作品，你更关注：",
+o:["A 感受体验","B 形式逻辑","C 制作过程","D 概念含义"]},
 
-{
-q:"当你开始一个作品时，你通常：",
-o:[
-"A 先进入情绪",
-"B 先设计结构",
-"C 先动手尝试",
-"D 先形成概念"
-]
-},
+{q:"当你开始一个作品时，你通常：",
+o:["A 先进入情绪","B 先设计结构","C 先动手尝试","D 先形成概念"]},
 
-{
-q:"当创作遇到困难时，你更可能：",
-o:[
-"A 改变氛围或情绪",
-"B 重组结构",
-"C 尝试新的材料",
-"D 重新思考概念"
-]
-},
+{q:"当创作遇到困难时，你更可能：",
+o:["A 改变氛围或情绪","B 重组结构","C 尝试新的材料","D 重新思考概念"]},
 
-{
-q:"当作品逐渐发展时，你更享受：",
-o:[
-"A 情绪逐渐清晰",
-"B 结构逐渐完整",
-"C 实验不断发生",
-"D 思想逐渐形成"
-]
-},
+{q:"当作品逐渐发展时，你更享受：",
+o:["A 情绪逐渐清晰","B 结构逐渐完整","C 实验不断发生","D 思想逐渐形成"]},
 
-{
-q:"在创作过程中，你通常不会：",
-o:[
-"A 只依赖情绪",
-"B 忽略整体结构",
-"C 停止实验",
-"D 忽略概念"
-]
-},
+{q:"在创作过程中，你通常不会：",
+o:["A 只依赖情绪","B 忽略整体结构","C 停止实验","D 忽略概念"]},
 
-{
-q:"面对新材料，你更可能：",
-o:[
-"A 感受质感",
-"B 研究形态",
-"C 直接实验",
-"D 思考象征"
-]
-},
+{q:"面对新材料，你更可能：",
+o:["A 感受质感","B 研究形态","C 直接实验","D 思考象征"]},
 
-{
-q:"当你整理作品时，你更可能：",
-o:[
-"A 调整情绪表达",
-"B 优化结构关系",
-"C 改变制作方法",
-"D 强化思想主题"
-]
-},
+{q:"当你整理作品时，你更可能：",
+o:["A 调整情绪表达","B 优化结构关系","C 改变制作方法","D 强化思想主题"]},
 
-{
-q:"如果给你一个主题，你更可能从哪里开始：",
-o:[
-"A 情绪体验",
-"B 结构设计",
-"C 行动实验",
-"D 思想概念"
-]
-},
+{q:"如果给你一个主题，你更可能从哪里开始：",
+o:["A 情绪体验","B 结构设计","C 行动实验","D 思想概念"]},
 
-{
-q:"在艺术学习中，你更关注：",
-o:[
-"A 感知能力",
-"B 构图结构",
-"C 材料实验",
-"D 理论思想"
-]
-},
+{q:"在艺术学习中，你更关注：",
+o:["A 感知能力","B 构图结构","C 材料实验","D 理论思想"]},
 
-{
-q:"当你评价一件作品时，你更看重：",
-o:[
-"A 情感力量",
-"B 形式结构",
-"C 实验性",
-"D 思想深度"
-]
-},
+{q:"当你评价一件作品时，你更看重：",
+o:["A 情感力量","B 形式结构","C 实验性","D 思想深度"]},
 
-{
-q:"你最容易沉浸在：",
-o:[
-"A 氛围体验",
-"B 系统秩序",
-"C 实践过程",
-"D 思想探索"
-]
-},
+{q:"你最容易沉浸在：",
+o:["A 氛围体验","B 系统秩序","C 实践过程","D 思想探索"]},
 
-{
-q:"如果必须快速完成作品，你更可能：",
-o:[
-"A 捕捉一种情绪",
-"B 建立一个结构",
-"C 做一次实验",
-"D 提出一个概念"
-]
-},
+{q:"如果必须快速完成作品，你更可能：",
+o:["A 捕捉一种情绪","B 建立一个结构","C 做一次实验","D 提出一个概念"]},
 
-{
-q:"如果时间充裕，你更愿意：",
-o:[
-"A 深入体验世界",
-"B 构建复杂结构",
-"C 进行大量实验",
-"D 发展思想体系"
-]
-},
+{q:"如果时间充裕，你更愿意：",
+o:["A 深入体验世界","B 构建复杂结构","C 进行大量实验","D 发展思想体系"]},
 
-{
-q:"在创作中，你更愿意构建：",
-o:[
-"A 情绪体验",
-"B 结构系统",
-"C 行动实验",
-"D 思想表达"
-]
-},
+{q:"在创作中，你更愿意构建：",
+o:["A 情绪体验","B 结构系统","C 行动实验","D 思想表达"]},
 
-{
-q:"你更享受哪种创作状态：",
-o:[
-"A 情绪流动",
-"B 秩序形成",
-"C 行动过程",
-"D 思想生成"
-]
-},
+{q:"你更享受哪种创作状态：",
+o:["A 情绪流动","B 秩序形成","C 行动过程","D 思想生成"]},
 
-{
-q:"当你遇到新的创作问题时：",
-o:[
-"A 先感受它",
-"B 先分析结构",
-"C 先尝试改变",
-"D 先理解概念"
-]
-},
+{q:"当你遇到新的创作问题时：",
+o:["A 先感受它","B 先分析结构","C 先尝试改变","D 先理解概念"]},
 
-{
-q:"当你面对复杂项目时，你更可能：",
-o:[
-"A 进入体验",
-"B 建立系统",
-"C 进行实验",
-"D 提炼理论"
-]
-},
+{q:"当你面对复杂项目时，你更可能：",
+o:["A 进入体验","B 建立系统","C 进行实验","D 提炼理论"]},
 
-{
-q:"在创作中你最信任：",
-o:[
-"A 直觉",
-"B 逻辑",
-"C 行动",
-"D 思考"
-]
-},
+{q:"在创作中你最信任：",
+o:["A 直觉","B 逻辑","C 行动","D 思考"]},
 
-{
-q:"如果必须描述你的创作方式，你更接近：",
-o:[
-"A 感受世界",
-"B 组织世界",
-"C 改变世界",
-"D 解释世界"
-]
-}
+{q:"如果必须描述你的创作方式，你更接近：",
+o:["A 感受世界","B 组织世界","C 改变世界","D 解释世界"]}
 
 ]
 
@@ -306,14 +186,13 @@ let html=""
 questions.forEach((item,i)=>{
 
 html+=`<div class="question">
-<p><b>${i+1}. ${item.q}</b></p>`
+<p>${i+1}. ${item.q}</p>`
 
 item.o.forEach(opt=>{
 html+=`
 <label>
-<input type="radio" name="q${i}" value="${opt[0]}">
-${opt}
-</label><br>`
+<input type="radio" name="q${i}" value="${opt[0]}"> ${opt}
+</label>`
 })
 
 html+="</div>"
@@ -324,10 +203,7 @@ document.getElementById("quiz").innerHTML=html
 
 function calculate(){
 
-let P=0
-let S=0
-let A=0
-let C=0
+let P=0,S=0,A=0,C=0
 
 for(let i=0;i<questions.length;i++){
 
@@ -369,66 +245,68 @@ let combo=[top1.type,top2.type].sort().join("")
 
 switch(combo){
 
-case "CP":
-result="感知诗人"
-break
-
-case "CS":
-result="概念炼金术士"
-break
-
-case "AP":
-result="实验探索者"
-break
-
-case "AS":
-result="世界建造者"
-break
-
-case "CS":
-result="结构策展人"
-break
-
-case "PS":
-result="秩序观察者"
-break
-
-case "AC":
-result="行动思想家"
-break
-
-default:
-result="系统创造者"
+case "CP": result="感知诗人"; break
+case "CS": result="概念炼金术士"; break
+case "AP": result="实验探索者"; break
+case "AS": result="世界建造者"; break
+case "PS": result="秩序观察者"; break
+case "AC": result="行动思想家"; break
+default: result="结构策展人"
 
 }
 
 }
 
 let dominance=top1.score-top2.score
+
 let strength=""
 
-if(dominance<=1){
-strength="混合型创造者"
-}else if(dominance<=3){
-strength="偏向型"
-}else{
-strength="强烈型"
-}
+if(dominance<=1) strength="混合型创造者"
+else if(dominance<=3) strength="偏向型"
+else strength="强烈型"
 
 document.getElementById("result").innerHTML=`
 
-<h2>你的创造类型：${result}</h2>
+<h2>${result}</h2>
 
 <p><b>创造强度：</b>${strength}</p>
 
 <p>
-感知(P)：${P} <br>
-结构(S)：${S} <br>
-行动(A)：${A} <br>
-概念(C)：${C}
+感知 P：${P}<br>
+结构 S：${S}<br>
+行动 A：${A}<br>
+概念 C：${C}
 </p>
 
+<div class="chartBox">
+<canvas id="radarChart"></canvas>
+</div>
 `
+
+const ctx=document.getElementById('radarChart')
+
+new Chart(ctx,{
+type:'radar',
+data:{
+labels:["感知 P","结构 S","行动 A","概念 C"],
+datasets:[{
+data:[P,S,A,C],
+fill:true
+}]
+},
+options:{
+plugins:{
+legend:{display:false}
+},
+scales:{
+r:{
+min:0,
+max:12,
+ticks:{display:false}
+}
+}
+}
+})
 
 }
 
